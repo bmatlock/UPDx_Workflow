@@ -1,0 +1,232 @@
+---
+title: "CDC-Univeral-Parasite-Diagnostic-Assay"
+date: "`r Sys.Date()`"
+output: html_document
+tables: yes
+---
+<style>
+body {
+position: absolute;
+left: 0px;}
+</style>
+
+
+```{r read_arg, echo=FALSE}
+library(knitr)
+library(kableExtra)
+library(pdftools)
+args = commandArgs(trailingOnly = TRUE)
+
+#Assign names to your arguments
+specimen_name <- args[1]
+results_table_path <- args[2]
+full_summary_table_path <- args[3]
+threshold <- args[4]
+command_line_input <- readLines(args[5])
+cut_off_table_path <- args[6]
+FQC_table_path <- args[7]
+fqc_link_r1 <- args[8]
+fqc_link_r2 <- args[9]
+FQC_Log <- readLines(args[10])
+ts_avg <- readLines(args[11])
+ts_stdev <- readLines(args[12])
+cluster_table_path <- args[13]
+exclusion_BLAST_check <- args[14]
+exclusion_table_path <- args[15]
+reference_table_path <- args[16]
+workflow_version <- args[17]
+unclear_seqs_check <- args[18]
+```
+
+**_This workflow was ran by `r Sys.info()["user"]`._**. 
+
+**_The inputs used to generate this run:_**    
+
+**_`r command_line_input`_**. 
+
+**_The version of workflow used to generate this run:_**
+
+**_CDC-Complete-UPDx-18S-Workflow-`r workflow_version`.sh_**.
+
+## Summary Report: `r specimen_name` {.tabset .tabset-fade .tabset-pills}
+
+### Parasite Results
+
+```{r check_for_unclear_seqs, echo=FALSE, warning=FALSE, message=FALSE}
+if (unclear_seqs_check == 'FALSE')
+  {print("There were no unclear sequences found for this specimen.")
+    } else {print("There were unclear sequences found for this specimen, please check the summary folder for this specimen under the Unclear_Hits directory where you will find summary reports for each unclear sequence!")}
+```
+
+
+
+```{r show_results_table, echo=FALSE, results='asis', fig.align='center', fig.cap='specimen_with_reference_database', out.width="75%", out.height="75%"}
+#Import the result tables
+results_table <- read.csv(results_table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(results_table) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+
+### Full Summary Table
+
+```{r show_summary_table, echo=FALSE, results='asis'}
+
+#Import the complete summary tables
+summary_table <- read.csv(full_summary_table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(summary_table) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+### Cut-off Threshold 
+
+The cut-off threshold for `r specimen_name` was found to be `r threshold`. The cut-off multiplier was calculated based on the proportion of contaminated reads in our negative samples. The equation used was μ_(contam_all)+(4*S.D.). This multiplier was then applied to the total number of reads for each sample. If the cut-off threshold is 20.0 that means there were no contaminated reads found in the negative samples, otherwise the parasites found in the negative samples that were used for this calculation is listed in the table below:
+
+```{r set_up_cutoff_table, echo=FALSE, warning=FALSE, message=FALSE}
+if (threshold == '20.0')
+  {show_table = FALSE
+    } else {show_table = TRUE}
+```
+
+```{r show cutoff_table, echo=FALSE, eval=show_table}
+
+#Import the cutoff tables
+cutoff_table <- read.csv(cut_off_table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(cutoff_table) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+
+
+### FastQC Results 
+
+**The sequences were first analyzed via FastQC before quality trimming (Raw).** 
+**The sequences were then analyzed again via FastQC after quality trimming via BBDuk (Clean)** 
+**The results are shown in the table below** 
+
+```{r show FQC_table, echo=FALSE, eval=show_table}
+
+#Import the cutoff tables
+FQC_table <- read.csv(FQC_table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(FQC_table) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+**The full post-quality trimming fqc report is linked below for each read.**
+
+[Read1](`r fqc_link_r1`). 
+
+[Read2](`r fqc_link_r2`). 
+
+**__IMPORTANT QUALITY CHECKPOINTS__**. 
+
+**BEFORE quality trimming, adapter trimming and quality filtering of raw reads using BBTOOLs, FastQC results may indicate that the run has failed on multiple quality criteria. Before quality trimming, FastQC results may or may not produce a failed result for the following quality metrics:**. 
+
+a)	Basic statistics. 
+
+b)	Per base sequence quality. 
+
+c)	Per sequence quality scores. 
+
+d)	Per base sequence content. 
+
+e)	Per base GC content. 
+
+f)	Per sequence GC content. 
+
+g)	Sequence duplication levels. 
+
+h)	Over-represented sequences. 
+
+i)	Kmer content. 
+
+**IMPORTANT: A failed result obtained for these metrics BEFORE read quality control is performed using BBDuk does not necessarily reflect a failed set of paired reads. In other words, no results in this step will result in termination of the workflow for a given specimen pair.**. 
+
+**If the reads fail to pass on any of the above metrics (metrics “a” to “c”) AFTER the BBDuk QC step, then the specimen has failed to meet an essential minimum quality criterion and the laboratory protocol (starting at the beginning of first DNA digestion step) must be repeated for this specimen. The specimen will have been removed from the workflow and can be found in the Experiment folder under FQC_'Date'/failed_sequence_runs.**. 
+
+**Again, a failure at the following metrics must NOT result in exclusion of a specimen from downstream analysis:**. 
+
+e)	Per base GC content. 
+
+f)	Per sequence GC content. 
+
+g)	Sequence duplication levels. 
+
+h)	Over-represented sequences. 
+
+i)	Kmer content. 
+
+**RATIONALE for considering certain FASTQC criteria and not others. The reason that the above quality metrics (“a” to “e” in section 3.1.5) must not be used to exclude a specimen from further analysis is because the data generated for the UPDx assay are amplicon data. Consequently, it is expected that duplicated sequences, over-represented sequences, and over-represented K-mers (and possibly an unusual GC content) are expected.**. 
+
+
+**In addition, the workflow records the number of sequences (i.e., reads) obtained for all specimens in the run: `r ts_avg`. This average must be above 17,000 reads total (~8,500 pairs of reads per specimen). If the average number of reads is above 17,000 (~8,500 pairs of reads) calculated across all specimens (controls included) for a given Illumina library, when taken in conjunction with passing QC checkpoints 1 through 4, this information indicates that the sequencing run/library preparation HAS PASSED QC.**. 
+
+**The basis of this cutoff of 17,000 to 18,000 reads (~9,000 pairs): This cutoff was obtained based on extensive experience with UPDx. On average (based on having sequenced a total of 425 UPDx specimens), the average number of reads (sum of both pairs of the paired-end fastq files) was ~ 17,500.**. 
+
+**Finally, the workflow records the standard deviation for the number of reads available for each specimen: `r ts_stdev`. If any specimen within the Illumina run possesses a number of reads BELOW ONE STANDARD DEVIATION, then this specimen possesses an insufficient amount of sequence data to be considered for downstream analysis. The specimen will have been removed from the workflow and can be found in the Experiment folder under FQC_'Date'/failed_sequence_runs**. 
+
+**The rationale for this QC Checkpoint: We previously observed that the number of reads obtained for each specimen in an Illumina library approximates a normal distribution. Consequently, effectively zero specimens will obtain a number of sequencing reads less than 4 standard deviations below the mean. Therefore, this criterion excludes all specimens that possess a number of reads at or below the lower 2nd percentile (again, assuming a normal distribution). While this sounds like a relaxed exclusion criterion, recall that QC checkpoint 4 requires the average number of reads obtained in each Illumina sequencing run to be ~18,000. This means that specimens possessing a number of reads greater than one standard deviation will usually represent more than a sufficient number of reads for downstream analysis (approximately 5,000 to 8,000).**. 
+
+**Below is a log of all the samples that went through the workflow and whether or not they passed metrics (a-d) and had a number of reads above at least one standard deviation. In addition the workflow checks that the average number of reads for each sample is above at least 17,000, also mentioned in the log below. IMPORTANT: ANY SAMPLES THAT FAILED METRICS (a-d) OR HAD AN AVERAGE NUMBER OF READS LESS THAN 17,000 WERE REMOVED FROM THE WORKFLOW AND DID NOT RECEIVE ANY FURTHER ANALYSIS.**
+
+```{r comment='', echo=FALSE}
+cat((FQC_Log), sep='\n')
+```
+
+### CDHIT 
+
+**CD-Hit is an algorithm that bins identical reads into clusters based on one representative sequence. Each sample is now defined by multiple clusters that each represent the unique haplotypes detected for that sample. Thus, rather than BLASTing each read individually, we BLAST a representative of each haplotype, reducing computation times. Any clusters represented by less than 20 merged reads are filtered out before continuing in the workflow. A summary table for the clusters generated by CD-Hit is shown below.**
+
+
+```{r show cluster_table, echo=FALSE}
+
+#Import the cutoff tables
+cluster_table <- read.csv(cluster_table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(cluster_table) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+### Exclusion BLAST 
+
+**After filtering out the clusters with less than 20 reads, the remaining clusters undergo a BLASTN search against a database constructed from human18s r DNA sequences. Any representative sequences with hits towards this "Exclusion Database" are discarded. A summary of the Exclusion BLAST step is shown below.**. 
+
+```{r set_up_exclusion_table, echo=FALSE, warning=FALSE, message=FALSE}
+if (exclusion_BLAST_check == 'FALSE')
+  {show_excl_table = FALSE
+    } else {show_excl_table = TRUE}
+```
+
+```{r show exclusion_table, echo=FALSE, eval=show_excl_table}
+
+#Import the exclusion tables
+exclusion_table <- read.csv(exclusion_table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(exclusion_table, digits = 100) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+### Reference BLAST 
+
+**After filtering out clusters that had hits towards our "Exclusion Database", the remaining clusters undergo a final BLASTN search against our "Reference Database" containing a curated set of 18s sequences compiled from a range of parasites. Any hits to fungal sequences are subsequently removed before applying our cut-off multiplier. A summary of the Reference BLAST step is shown below.**
+
+```{r show reference_table, echo=FALSE}
+
+#Import the reference tables
+reference_table <- read.csv(reference_table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+
+knitr::kable(reference_table, digits = 100) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
