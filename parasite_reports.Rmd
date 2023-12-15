@@ -1,0 +1,34 @@
+---
+title: "CDC-Univeral-Parasite-Diagnostic-Assay"
+output: html_document
+---
+<style>
+body {
+position: absolute;
+left: 0px;}
+</style>
+
+
+```{r read_arg, echo=FALSE}
+library(knitr)
+library(kableExtra)
+args = commandArgs(trailingOnly = TRUE)
+
+#Assign names to your arguments
+parasite_table_path <- args[1]
+
+```
+
+**_This workflow was ran by `r Sys.info()["user"]`._**. 
+
+## **_Parasite Hits - `r Sys.Date()`_**
+
+```{r show_parasite_table, echo=FALSE, results='asis'}
+
+#Import the parasite tables
+parasite_table <- read.csv(parasite_table_path, header = FALSE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(parasite_table, col.names = NULL) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
