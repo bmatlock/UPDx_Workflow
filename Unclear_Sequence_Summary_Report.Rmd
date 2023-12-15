@@ -1,0 +1,62 @@
+---
+title: CDC-Univeral-Parasite-Diagnostic-Assay-Unclear-Sequences"
+output: html_document
+date: '`r Sys.Date()`'
+---
+
+<style>
+body {
+position: absolute;
+left: 0px;}
+</style>
+
+
+```{r read_arg, echo=FALSE}
+library(knitr)
+library(kableExtra)
+library(pdftools)
+args = commandArgs(trailingOnly = TRUE)
+
+#Assign names to your arguments
+unclear_sequence_name <- args[1]
+command_line_input <- readLines(args[2])
+Unclear_Sequence_Table_path <- args[3]
+Ideal_Cluster_Table_path <- args[4]
+Unclear_Sequence_Tree_PNG <- args[5]
+Unclear_Sequence_Tree_Link <- args[6]
+```
+
+**_This workflow was ran by `r Sys.info()["user"]`._**. 
+
+**_The inputs used to generate this run:_**    
+
+**_`r command_line_input`_**. 
+
+## Summary Report: `r unclear_sequence_name` {.tabset .tabset-fade .tabset-pills}
+
+```{r show_unclear_sequence_table, echo=FALSE, results='asis', fig.align='center', out.width="75%", out.height="75%"}
+#Import the result tables
+Unclear_Sequence_table <- read.csv(Unclear_Sequence_Table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(Unclear_Sequence_table) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+`r unclear_sequence_name` **Was BLASTed again towards our 18S parasite database and the top 40 hits by bit-score were collected. The top 40 hits were aligned with the unclear sequence in order to construct a tree of sequences most closely related to the unclear sequence. The resulting tree was cut sequentially until it reached a height in which the unclear sequence was clustered by itself. The prior height was then picked and the ideal cluster containing the unclear sequence and the most closely related sequences in the tree is shown below along with the overall tree and the ideal cluster highlighted.**
+
+```{r show_ideal_cluster, echo=FALSE, results='asis', fig.align='center', out.width="75%", out.height="75%"}
+#Import the result tables
+Ideal_Cluster_table <- read.csv(Ideal_Cluster_Table_path, header = TRUE, sep = ",", blank.lines.skip = TRUE)
+
+knitr::kable(Ideal_Cluster_table) %>%
+  #Add bootstrap options to include highlighting the row when you hover over it and including a border for each cell
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+```
+
+```{r pressure, echo=FALSE, fig.cap="Unclear_Sequence_Clustered_with_top_40_Hits_to_Databse", fig.align='center', out.width="400%"}
+knitr::include_graphics(Unclear_Sequence_Tree_PNG)
+```
+
+[Link to Full Tree](`r Unclear_Sequence_Tree_Link`). 
+
